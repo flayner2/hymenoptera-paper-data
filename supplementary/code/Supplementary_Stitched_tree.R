@@ -14,7 +14,7 @@ rm(list = ls())
 
 # Set the current working directory to this script's directory. You will need
 # to change this to the path were it's located on your computer
-setwd("~/Documents/LAB/eusociality/work/masters_paper/doc/paper/supplementary/code/")
+setwd("~/Documents/LAB/eusociality/work/masters_paper/doc/hymenoptera-paper-data/supplementary/code/")
 
 # Setting a seed for reproductibility
 seed <- 666
@@ -345,10 +345,17 @@ for (tip_name in final_tree$tip.label) {
   }
 }
 
-# Saving the final tree
-write.tree(final_tree, "../data/stitched_tree.nwk")
-
 print("The tree was constructed successfuly")
+
+# Saving the tree file. The saved tree is the one constructed here, not the 
+# `main_tree` below, which is the tree from the MCMCTree results
+print("Saving tree in NEWICK format...")
+# Remove the outgroups
+tree_to_save <- drop.tip(final_tree, c("Dmel", "Tcas"))
+# Erasing branch length data as it isn't useful for us
+tree_to_save$edge.length <- NULL
+# Saving the final tree without the outgroups and branch lengths
+write.tree(tree_to_save, "../data/stitched_tree.nwk")
 
 ############################# PLOTTING THE TREE ################################
 print("Generating the tree plots...")
@@ -366,12 +373,10 @@ for (tip_name in backbone_tree$tip.label) {
   backbone_tree$tip.label[which(backbone_tree$tip.label == tip_name)] <- fixed_name
 }
 
-# Re-rooting the backbone tree
-backbone_tree <- reroot(backbone_tree, 343)
-
 # Graphical parameters for plotting
 tree_font_size <- 6
-tree_font_family <- "Consolas"
+tree_font_family <- "mono"
+tree_clade_font_family <- "sans serif"
 tree_pdf_width <- 20
 tree_pdf_height <- 46
 tree_font_size_legend <- 18
@@ -390,23 +395,27 @@ backbone_removed_nodes <- data.frame(
   status = c(rep("removed", times = 49), rep("anchor", times = 17))
 )
 
-# Generating the plot
+# Plotting
 cairo_pdf(
   "../figures/Supplementary_Figure_4_tree_backbone_removed_anchor.pdf", 
   width = tree_pdf_width, 
   height = tree_pdf_height
 )
-ggtree(backbone_tree, size = 2, branch.length = "none") + 
-  geom_tiplab(size = tree_font_size, family = tree_font_family) + 
+ggtree(backbone_tree, linewidth = 2, branch.length = "none") + 
+  geom_tiplab(
+    size = tree_font_size, 
+    family = tree_font_family,
+    fontface = "bold"
+  ) + 
   geom_highlight(
     data = backbone_removed_nodes, 
-    mapping = aes(node = node, fill = status, extend = 1.2)
+    mapping = aes(node = node, fill = status, extend = 1.3)
   ) +
-  geom_rootedge(rootedge = 0.5, size = 2) +
+  geom_rootedge(rootedge = 0.5, linewidth = 2) +
   scale_fill_manual(
     name = "",
     breaks = c("removed", "anchor"),
-    labels = c("Removido", "Referência"),
+    labels = c("Removed", "Reference"),
     values = c("red", "blue")) +
   theme(legend.text = element_text(size = tree_font_size_legend),
         legend.title = element_text(size = tree_font_size_legend_title),
@@ -416,8 +425,8 @@ ggtree(backbone_tree, size = 2, branch.length = "none") +
 dev.off()
 
 #### Intermediate tree 
-# Nós terminais não presentes na árvore final e não utilizados como pontos de ancoragem
-# TODO: arrumar esses ids, porque eles estão desatualizados (2023/03/28)
+# This is the tree with the non-reference nodes removed, indicating the nodes
+# used only for reference that will afterwards be removed as well
 intermediate_to_remove <- c(
   126, 125, 124, 123, 122, 121, 119, 134, 133, 132, 131, 135, 118, 116, 115, 113, 
   112, 111, 110, 141, 144, 147, 146, 145, 150, 149, 148, 109, 108, 107, 106, 105, 
@@ -428,12 +437,9 @@ intermediate_to_remove <- c(
   14, 15, 9, 17, 16, 19, 18, 20, 7, 5, 4, 8, 2, 1, 157, 156, 155, 158, 169, 165, 
   164, 163, 162, 161, 160, 159
 )
-
-# Remoção dos nós não presentes na árvore final e não utilizados como pontos de ancoragem
 intermediate_tree <- drop.tip(backbone_tree, intermediate_to_remove)
 
-# Nós usados como ancoragem marcados para posterior remoção
-# TODO: arrumar esses ids, porque eles estão desatualizados (2023/03/28)
+# The reference nodes that will be removed later
 intermediate_removed_nodes <- data.frame(
   node = c(
     64, 63, 18, 17, 59, 12, 46, 2, 72, 77, 35, 39
@@ -441,20 +447,27 @@ intermediate_removed_nodes <- data.frame(
   status = c(rep("removed", times = 12))
 )
 
-# Geração da figura
+# Plotting
 cairo_pdf(
-  "../Figuras/Figura_7.pdf", 
+  "../figures/Supplementary_Figure_5_tree_intermediate_anchor.pdf", 
   width = tree_pdf_width, 
   height = 16
 )
-ggtree(intermediate_tree, size = 2, branch.length = "none") + 
-  geom_tiplab(size = tree_font_size, family = tree_font_family) + 
-  geom_highlight(data = intermediate_removed_nodes, mapping = aes(node = node, fill = status, extend = 0.6)) +
-  geom_rootedge(rootedge = 0.5, size = 2) +
+ggtree(intermediate_tree, linewidth = 2, branch.length = "none") + 
+  geom_tiplab(
+    size = tree_font_size, 
+    family = tree_font_family,
+    fontface = "bold"
+  ) + 
+  geom_highlight(
+    data = intermediate_removed_nodes, 
+    mapping = aes(node = node, fill = status, extend = 0.7)
+  ) +
+  geom_rootedge(rootedge = 0.5, linewidth = 2) +
   scale_fill_manual(
     name = "",
     breaks = c("removed"),
-    labels = c("Removido"),
+    labels = c("Removed"),
     values = c("red")) +
   theme(legend.text = element_text(size = tree_font_size_legend),
         legend.title = element_text(size = tree_font_size_legend_title),
@@ -463,25 +476,23 @@ ggtree(intermediate_tree, size = 2, branch.length = "none") +
   scale_y_continuous(limits = c(-1, NA))
 dev.off()
 
-## ÀRVORE FINAL
-# Re-enraizamento da árvore usando o grupo externo (Tcas + Dmel)
-final_tree <- reroot(final_tree, 132)
+#### Final tree
+# First plot contains a simple representation of the tree and a highlight of
+# the included species. This tree also includes the outgroup species
 
-# Classificação dos nós adicionados não presentes em Peters et al. 2017
-# de acordo com o grande grupo
-# TODO: arrumar esses ids, porque eles estão desatualizados (2023/03/28)
+# The included species not present in the original backbone tree
 highlighted_nodes <- data.frame(
   node = c(
-    # formigas
-    124, 47, 48, 49, 50, 51, 125, 54, 55, 42, 43, 126, 127, 39, 40,
-    # abelhas
-    98, 25, 26, 23, 22, 92, 104,
-    # mosca
-    67,
-    # moscas-serra
-    1, 128,
-    # vespas
-    84, 18, 16, 76, 5, 3
+    # ants
+    128, 49, 50, 51, 52, 53, 129, 56, 57, 44, 41, 42, 45, 130, 131,
+    # bees
+    100, 25, 26, 23, 22, 94, 108,
+    # Drosophila melanogaster
+    69,
+    # Sawflies
+    1, 132,
+    # Wasps
+    86, 18, 16, 5, 3, 78
   ),
   group = c(
     rep("ants", times = 15),
@@ -492,21 +503,29 @@ highlighted_nodes <- data.frame(
   )
 )
 
-# Geração da figura
+# Plotting
 cairo_pdf(
-  "../Figuras/Figura_8.pdf", 
+  "../figures/Supplementary_Figure_6_tree_final_with_outgroups_included_nodes.pdf", 
   width = tree_pdf_width, 
   height = 22
 )
-ggtree(final_tree, size = 2, branch.length = "none") + 
-  geom_tiplab(size = tree_font_size, family = tree_font_family) +
-  geom_highlight(data = highlighted_nodes, mapping = aes(node = node, fill = group, extend = 0.95)) +
-  geom_rootedge(rootedge = 0.5, size = 2) +
+ggtree(final_tree, linewidth = 2, branch.length = "none") + 
+  geom_tiplab(
+    size = tree_font_size, 
+    family = tree_font_family, 
+    fontface = "bold"
+  ) +
+  geom_highlight(
+    data = highlighted_nodes, 
+    mapping = aes(node = node, fill = group, extend = 1)
+  ) +
+  geom_rootedge(rootedge = 0.5, linewidth = 2) +
   scale_fill_manual(
-    name = "Grande grupo",
-    breaks = c("bees", "ants", "flies", "sawflies", "wasps"),
-    labels = c("Abelhas", "Formigas", "Moscas", "Moscas-serra", "Vespas"),
-    values = c("#66C2A5", "#8DA0CB", "#FFD92F", "#FC8D62", "#E78AC3")) +
+    name = "Major group",
+    breaks = c("ants", "bees", "wasps", "sawflies", "flies"),
+    labels = c("Ants", "Bees", "Wasps", "Sawflies", "Flies"),
+    values = c("#785EF0", "#4FD633", "#DC267F", "#F16E1E", "#FFD92F")
+  ) +
   theme(legend.text = element_text(size = tree_font_size_legend),
         legend.title = element_text(size = tree_font_size_legend_title),
         legend.margin = tree_legend_margin,
@@ -514,14 +533,13 @@ ggtree(final_tree, size = 2, branch.length = "none") +
   scale_y_continuous(limits = c(-1, NA))
 dev.off()
 
-## ÁRVORE PRINCIPAL
-# Remoção dos grupos externos e das espécies com socialidade intermediária
-main_tree <- drop.tip(final_tree, c("Dmel", "Tcas", "Ccal", "Nmel", "Emex"))
+#### Main tree
+# This is the resulting tree from the MCMCTree run (it's ultrametric)
+main_tree <- read.newick("../data/ort80_hymenoptera_67species_100mil_mcmctree.nwk")
 
-# Leitura dos metadados sobre eussocialidade
-eusociality_data <- read.csv(
-  "../Dados/plot_data/species_metadata.tsv",
-  header = T,
+# Metadata
+eusociality_data <- read.delim(
+  "../data/species_metadata_eusociality.tsv",
   sep = "\t"
 ) %>% select(ABBREV, SOCIALITY_LEVEL, GROUP) %>% 
   dplyr::rename(
@@ -530,18 +548,44 @@ eusociality_data <- read.csv(
     major_group = GROUP
 ) %>% filter(!species %in% c("Dmel", "Tcas"))
 
-# Geração da árvore
+parasitoidism_data <- read.delim(
+  "../data/species_metadata_parasitoidism.tsv",
+  sep = "\t"
+) %>% select(ABBREV, PARASITOIDISM, GROUP) %>% 
+  dplyr::rename(
+    species = ABBREV,
+    parasitoidism = PARASITOIDISM,
+    major_group = GROUP
+  ) %>% filter(!species %in% c("Dmel", "Tcas"))
+
+full_metadata <- eusociality_data %>% left_join(
+  parasitoidism_data, by = c("species", "major_group")
+)
+
+# Plotting
+# The clade names here are the most specific names that encompass all species
+# within. We chose commonly identifiable clades and weren't strict to the
+# current taxonomic view of the order. Therefore, we include the classic clades
+# "Symphyta" and "Parasitica", none of which are monophyletic, but which are
+# helpful in picturing the species within (i.e., "Symphyta" are all the sawflies 
+# and "Parasitica" the parasitoid wasps within Apocrita)
 cairo_pdf(
-  "../Figuras/Figura_9.pdf", 
+  "../../figures/Figure_2_Main_tree.pdf", 
   width = tree_pdf_width, 
   height = 22
 )
-# TODO: arrumar esses ids (`node = `), porque eles estão desatualizados (2023/03/28)
-ggtree(main_tree, size = 2) %<+% eusociality_data + 
-  geom_tiplab(size = tree_font_size, family = tree_font_family) +
-  geom_tippoint(aes(color = as.factor(level)), position = position_nudge(x = .22), size = 5) +
+ggtree(main_tree, linewidth = 2) %<+% full_metadata + 
+  geom_tiplab(
+    size = tree_font_size, 
+    family = tree_font_family, 
+    fontface = "bold"
+  ) +
+  geom_tippoint(
+    aes(color = as.factor(level), shape = parasitoidism), 
+    position = position_nudge(x = .22), size = 5
+  ) +
   geom_cladelab(
-    node = 121, 
+    node = 131, 
     label = "\"Symphyta\"",
     image = "../pics/sawfly.png",
     geom = "image",
@@ -553,20 +597,20 @@ ggtree(main_tree, size = 2) %<+% eusociality_data +
     offset.text = 0.25
   ) +
   geom_cladelab(
-    node = 121, 
+    node = 131,
     label = "\"Symphyta\"",
     color = "black",
     angle = 90,
     offset = 0.25,
     barsize = 0,
     fontsize = tree_font_size,
-    family = tree_font_family,
+    family = tree_clade_font_family,
     hjust = 0.5,
     offset.text = 0.05
   ) +
   geom_cladelab(
-    node = 67, 
-    label = "Parasitoida",
+    node = 72, 
+    label = "\"Parasitica\"",
     image = "../pics/parasitoida.png",
     geom = "image",
     imagecolor = "black", 
@@ -577,20 +621,20 @@ ggtree(main_tree, size = 2) %<+% eusociality_data +
     offset.text = 0.25
   ) +
   geom_cladelab(
-    node = 67, 
-    label = "Parasitoida",
+    node = 72, 
+    label = "\"Parasitica\"",
     color = "black",
     angle = 90,
     offset = 0.25,
     barsize = 0,
     fontsize = tree_font_size,
-    family = tree_font_family,
+    family = tree_clade_font_family,
     hjust = 0.5,
     offset.text = 0.05
   ) +
   geom_cladelab(
-    node = 76, 
-    label = "Vespoidea",
+    node = 81, 
+    label = "Vespidae",
     image = "../pics/vespoidea.png",
     geom = "image",
     imagecolor = "black", 
@@ -601,19 +645,19 @@ ggtree(main_tree, size = 2) %<+% eusociality_data +
     offset.text = 0.25
   ) +
   geom_cladelab(
-    node = 76, 
-    label = "Vespoidea",
+    node = 81, 
+    label = "Vespidae",
     color = "black",
     angle = 90,
     offset = 0.25,
     barsize = 0,
     fontsize = tree_font_size,
-    family = tree_font_family,
+    family = tree_clade_font_family,
     hjust = 0.5,
     offset.text = 0.05
   ) +
   geom_cladelab(
-    node = 83, 
+    node = 88, 
     label = "Apoidea",
     image = "../pics/apoidea.png",
     geom = "image",
@@ -625,20 +669,20 @@ ggtree(main_tree, size = 2) %<+% eusociality_data +
     offset.text = 0.25
   ) +
   geom_cladelab(
-    node = 83, 
+    node = 88, 
     label = "Apoidea",
     color = "black",
     angle = 90,
     offset = 0.25,
     barsize = 0,
     fontsize = tree_font_size,
-    family = tree_font_family,
+    family = tree_clade_font_family,
     hjust = 0.5,
     offset.text = 0.05
   ) +
   geom_cladelab(
-    node = 98,
-    label = "Formicoidea",
+    node = 108,
+    label = "Formicidae",
     image = "../pics/formicoidea.png",
     geom = "image",
     imagecolor = "black", 
@@ -650,24 +694,28 @@ ggtree(main_tree, size = 2) %<+% eusociality_data +
     imagesize = 0.035
   ) +
   geom_cladelab(
-    node = 98, 
-    label = "Formicoidea",
+    node = 108, 
+    label = "Formicidae",
     color = "black",
     angle = 90,
     offset = 0.25,
     barsize = 0,
     fontsize = tree_font_size,
-    family = tree_font_family,
+    family = tree_clade_font_family,
     hjust = 0.5,
     offset.text = 0.05
   ) +
   geom_rootedge(rootedge = 0.2, size = 2) +
-  geom_treescale(fontsize = tree_font_size, family = tree_font_family, y = -1) +
+  geom_treescale(fontsize = tree_font_size, family = tree_clade_font_family, y = -1) +
   scale_color_manual(
-    name = "Nível de socialidade",
-    breaks = c(1, 3),
-    labels = c("Solitário", "Eussocial"),
-    values = c("black", "red")   
+    name = "Eusociality level",
+    breaks = c(1, 2, 3),
+    labels = c("Solitary", "Intermediate", "Eussocial"),
+    values = c("black", "#757575", "red")   
+  ) +
+  scale_shape(
+    name = "Parasitism/parasitoidism", 
+    labels = c("Not parasitic", "Parasite/parasitoid")
   ) +
   guides(color = guide_legend(override.aes = list(size = 5))) +
   theme(legend.text = element_text(size = tree_font_size_legend),
@@ -677,4 +725,4 @@ ggtree(main_tree, size = 2) %<+% eusociality_data +
   scale_y_continuous(limits = c(-1, NA))
 dev.off()
 
-print("Execução concluída com sucesso!")
+print("Done! Finished successfuly!")
