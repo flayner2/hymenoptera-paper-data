@@ -15,7 +15,7 @@ rm(list = ls())
 
 # Set the current working directory to this script's directory. You will need
 # to change this to the path were it's located on your computer
-setwd("~/Documents/LAB/eusociality/work/masters_paper/doc/paper/supplementary/code/")
+setwd("~/Documents/LAB/eusociality/work/masters_paper/doc/hymenoptera-paper-data/supplementary/code/")
 
 # Setting a seed for reproductibility
 seed <- 666
@@ -27,8 +27,8 @@ set.seed(seed)
 ################################ CONFIGURATION #################################
 # Phenotype/trait to be evaluated. Either "eusociality" or "parasitoidism"
 # Use only one
-dataset <- "eusociality"
-# dataset <- "parasitoidism"
+# dataset <- "eusociality"
+dataset <- "parasitoidism"
 
 if (dataset %!in% c("eusociality", "parasitoidism")) {
   stop("Variable `dataset` must be either 'eusociality' or 'parasitoidism'.")
@@ -135,8 +135,7 @@ if (dataset == "eusociality") {
   fig_name <- "Figure_4_IPR_parasitoidism.pdf"
   
   terms_to_ignore <- c(
-    "IPR008753", "IPR042089", "IPR018497", "IPR002625", "IPR013899", 
-    "IPR036063", "IPR030708"
+    "IPR008753", "IPR042089", "IPR018497", "IPR013899", "IPR036063", "IPR030708"
   )
 } else {
   stop("Unrecognized dataset option.")
