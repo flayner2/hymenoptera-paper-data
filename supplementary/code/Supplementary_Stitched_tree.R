@@ -15,7 +15,7 @@ rm(list = ls())
 
 # Set the current working directory to this script's directory. You will need
 # to change this to the path were it's located on your computer
-setwd("~/Documents/LAB/eusociality/work/masters_paper/doc/hymenoptera-paper-data/supplementary/code/")
+setwd("[path_to_repository]/supplementary/code/")
 
 # Setting a seed for reproductibility
 seed <- 666
