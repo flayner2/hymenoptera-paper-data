@@ -8,6 +8,7 @@ library(phytools)
 library(Cairo)
 library(ggplot2)
 library(dplyr)
+library(ggnewscale)
 
 # Clearing the workspace
 rm(list = ls())
@@ -558,9 +559,13 @@ parasitoidism_data <- read.delim(
     major_group = GROUP
   ) %>% filter(!species %in% c("Dmel", "Tcas"))
 
-full_metadata <- eusociality_data %>% left_join(
-  parasitoidism_data, by = c("species", "major_group")
-)
+# This is necessary for `gheatmap` to work properly
+rownames(eusociality_data) <- eusociality_data$species
+eusociality_data <- eusociality_data %>% select(level)
+eusociality_data$level <- as.factor(eusociality_data$level)
+
+rownames(parasitoidism_data) <- parasitoidism_data$species
+parasitoidism_data <- parasitoidism_data %>% select(parasitoidism)
 
 # Plotting
 # The clade names here are the most specific names that encompass all species
@@ -569,20 +574,12 @@ full_metadata <- eusociality_data %>% left_join(
 # "Symphyta" and "Parasitica", none of which are monophyletic, but which are
 # helpful in picturing the species within (i.e., "Symphyta" are all the sawflies 
 # and "Parasitica" the parasitoid wasps within Apocrita)
-cairo_pdf(
-  "../../figures/Figure_2_Main_tree.pdf", 
-  width = tree_pdf_width, 
-  height = 22
-)
-ggtree(main_tree, linewidth = 2) %<+% full_metadata + 
+
+base_tree_plot <- ggtree(main_tree, linewidth = 2) %<+% full_metadata + 
   geom_tiplab(
     size = tree_font_size, 
     family = tree_font_family, 
     fontface = "bold"
-  ) +
-  geom_tippoint(
-    aes(color = as.factor(level), shape = parasitoidism), 
-    position = position_nudge(x = .22), size = 5
   ) +
   geom_cladelab(
     node = 131, 
@@ -705,24 +702,57 @@ ggtree(main_tree, linewidth = 2) %<+% full_metadata +
     hjust = 0.5,
     offset.text = 0.05
   ) +
-  geom_rootedge(rootedge = 0.2, size = 2) +
+  geom_rootedge(rootedge = 0.2, linewidth = 2) +
   geom_treescale(fontsize = tree_font_size, family = tree_clade_font_family, y = -1) +
-  scale_color_manual(
-    name = "Eusociality level",
-    breaks = c(1, 2, 3),
-    labels = c("Solitary", "Intermediate", "Eussocial"),
-    values = c("black", "#757575", "red")   
-  ) +
-  scale_shape(
-    name = "Parasitism/parasitoidism", 
-    labels = c("Not parasitic", "Parasite/parasitoid")
-  ) +
-  guides(color = guide_legend(override.aes = list(size = 5))) +
-  theme(legend.text = element_text(size = tree_font_size_legend),
-        legend.title = element_text(size = tree_font_size_legend_title),
-        legend.margin = tree_legend_margin,
-        legend.box.margin = tree_legend_box_margin) +
   scale_y_continuous(limits = c(-1, NA))
+
+tree_plot_with_eusociality <- gheatmap(
+  base_tree_plot, 
+  eusociality_data, 
+  custom_column_labels = "Eusociality",
+  width = 0.1,
+  colnames_angle = -45,
+  font.size = tree_font_size,
+  offset = 0.7,
+  colnames_position = "top",
+  colnames_offset_y = 1.2,
+  colnames_offset_x = -0.08
+) + 
+  scale_fill_manual(
+    name = "Eusociality level",
+    labels = c("Solitary", "Intermediate", "Eussocial"),
+    values = c("#CACACA", "#1B9E77", "#4D497D")
+  )
+
+tree_plot_with_eusociality <- tree_plot_with_eusociality + new_scale_fill()
+
+cairo_pdf(
+  "../../figures/Figure_2_Main_tree.pdf", 
+  width = 22, 
+  height = 22
+)
+gheatmap(
+    tree_plot_with_eusociality,
+    parasitoidism_data,
+    custom_column_labels = "Parasitoidism",
+    width = 0.1,
+    colnames_angle = -45,
+    font.size = tree_font_size,
+    offset = 1,
+    colnames_position = "top",
+    colnames_offset_y = 1.6,
+    colnames_offset_x = -0.08
+) + 
+  scale_fill_manual(
+    name = "Parasitism/parasitoidism",
+    labels = c("Not parasitic", "Parasite/parasitoid"),
+    values = c("#716C68", "#F77520")
+  ) + theme(
+    legend.text = element_text(size = tree_font_size_legend),
+    legend.title = element_text(size = tree_font_size_legend_title),
+    legend.margin = tree_legend_margin,
+    legend.box.margin = tree_legend_box_margin
+  )
 dev.off()
 
 print("Done! Finished successfuly!")
