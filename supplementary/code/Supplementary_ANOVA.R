@@ -135,7 +135,7 @@ if (dataset == "eusociality") {
   fig_name <- "Figure_4_IPR_parasitoidism.pdf"
   
   terms_to_ignore <- c(
-    "IPR008753", "IPR042089", "IPR018497", "IPR013899", "IPR036063", "IPR030708"
+    "IPR008753", "IPR042089", "IPR018497", "IPR013899", "IPR036063"
   )
 } else {
   stop("Unrecognized dataset option.")
@@ -302,7 +302,7 @@ hm2_legend_params <- list(
 if (dataset == "parasitoidism") {
   width_factor <- 1.2
 } else {
-  width_factor <- 1.6
+  width_factor <- 2.1
 }
 
 # Heatmap of the IPR terms significantly associated with the phenotype
