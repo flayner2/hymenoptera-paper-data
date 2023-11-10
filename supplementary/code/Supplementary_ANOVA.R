@@ -27,8 +27,8 @@ set.seed(seed)
 ################################ CONFIGURATION #################################
 # Phenotype/trait to be evaluated. Either "eusociality" or "parasitoidism"
 # Use only one
-# dataset <- "eusociality"
-dataset <- "parasitoidism"
+dataset <- "eusociality"
+# dataset <- "parasitoidism"
 
 if (dataset %!in% c("eusociality", "parasitoidism")) {
   stop("Variable `dataset` must be either 'eusociality' or 'parasitoidism'.")
@@ -174,6 +174,11 @@ for (annotation_ID in unique(colnames(annotation_df)))  {
     next
   }
   
+  # Skip IPR terms that occur in less than 50% of the species
+  if (length(current_ipr_count[current_ipr_count > 0]) < (length(current_ipr_count) / 2)) {
+    next
+  }
+  
   # Converting the counts to a named list
   current_ipr_count_wide <- cbind.data.frame(current_ipr_count, classes)
   
@@ -247,12 +252,15 @@ tree_as_dendrogram <- as.dendrogram(as.hclust.phylo(tree), edge.root = TRUE)
 
 # Setting the colour palette for the IPR counts
 if (dataset == "parasitoidism") {
-  counts_palette <- c("white", rev(viridis::magma(40)))  
+  counts_palette <- c(
+    "white", # Absence (count == 0) color
+    viridis::magma(50, direction = -1, begin = 0.30)
+  )
 } else {
-  # Here the eusociality palette is manually set to only 3 colors because it
-  # was verified in a previous run that all significant IPR terms had either
-  # zero, one or two copies
-  counts_palette <- c("white", "#FECD90FF", "#FB845FFF")
+  counts_palette <- c(
+    "white", # Absence (count == 0) color
+    viridis::magma(2, direction = -1, begin = 0.5, end = 0.8)
+  )
 }
 
 # Colour palette for the presence/absence of the phenotype
@@ -300,9 +308,9 @@ hm2_legend_params <- list(
 )
 
 if (dataset == "parasitoidism") {
-  width_factor <- 1.2
+  width_factor <- 2.6
 } else {
-  width_factor <- 2.1
+  width_factor <- 3.5
 }
 
 # Heatmap of the IPR terms significantly associated with the phenotype
@@ -315,6 +323,7 @@ ht1 = Heatmap(
   column_names_rot = 60,
   column_names_gp = gpar(fontfamily = default_font),
   column_title_gp = gpar(fontfamily = default_font),
+  show_column_dend = FALSE,
   row_dend_width = unit(5, "cm"), 
   row_dend_gp = gpar(lwd = 1.2, edge.root = TRUE), 
   row_names_side = "left", 
@@ -329,8 +338,7 @@ ht2 = Heatmap(
   cluster_rows = final_species_tree, 
   name = dataset_label, 
   col = phenotype_colours, 
-  column_dend_height = unit(2, "cm"),
-  column_dend_gp = gpar(lwd = 1.2), 
+  show_column_dend = FALSE,
   column_labels = "", 
   column_names_gp = gpar(fontfamily = default_font),
   column_title_gp = gpar(fontfamily = default_font),
@@ -350,10 +358,9 @@ ht3 = Heatmap(
   cluster_rows = final_species_tree, 
   name = "Major group", 
   col = groups_colors, 
-  column_dend_height = unit(2, "cm"), 
   column_names_gp = gpar(fontfamily = default_font),
   column_title_gp = gpar(fontfamily = default_font),
-  column_dend_gp = gpar(lwd = 1.2), 
+  show_column_dend = FALSE,
   column_labels = "", 
   height = 1, 
   row_dend_gp = gpar(lwd = 1.2, edge.root = TRUE), 
